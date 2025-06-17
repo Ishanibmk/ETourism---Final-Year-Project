@@ -19,21 +19,3 @@ Integration of IoT-based inputs like traffic, weather, and GPS.
 Graphical dashboard for tour visualization and user interaction.
 Modules for tour guide info, accommodation, emergency services, and feedback.
 
-Project Structure:
-tsp_project/
-│
-├── app.py                     # Flask backend logic
-├── city_distance.csv          # Distance matrix between cities
-├── fuzzy_logic.py             # Fuzzy logic and TFN integration
-├── harmony_search.py          # Core Harmony Search algorithm
-│
-├── templates/
-│   └── index.html             # Frontend UI
-│
-├── static/
-│   ├── css/
-│   └── js/
-│
-├── data/
-│   └── sample_routes/         # Sample inputs and outputs
-
