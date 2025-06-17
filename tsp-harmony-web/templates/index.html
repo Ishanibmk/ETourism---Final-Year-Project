@@ -1,0 +1,2467 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>E Tourism Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            min-height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #eaf4fb !important;
+            min-height: 100vh;
+            width: 100vw;
+            overflow-x: hidden;
+        }
+        /* Sidebar styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 240px;
+            background: linear-gradient(180deg, #007bff 70%, #00c6ff 100%);
+            color: #fff;
+            z-index: 1050;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            transition: width 0.3s cubic-bezier(.4,2,.6,1), box-shadow 0.3s;
+            box-shadow: 2px 0 16px rgba(0,123,255,0.08);
+        }
+        .sidebar.collapsed {
+            width: 64px;
+        }
+        .sidebar-header {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .sidebar-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 32px;
+        }
+        .sidebar-menu-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.1rem;
+            text-align: left;
+            padding: 14px 24px;
+            width: 100%;
+            transition: background 0.2s, color 0.2s, font-weight 0.2s;
+            border-radius: 0 24px 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        .sidebar-menu-btn.active, .sidebar-menu-btn:hover {
+            background: rgba(255,255,255,0.16);
+            color: #ffe;
+            font-weight: 700;
+        }
+        .sidebar.collapsed .sidebar-header-title {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-menu-btn span {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-menu-btn {
+            justify-content: center;
+            padding: 14px 0;
+        }
+        .sidebar-footer {
+            padding: 16px 18px;
+            border-top: 1px solid rgba(255,255,255,0.12);
+            font-size: 0.95rem;
+            color: #e0e6ef;
+            gap: 18px;
+        }
+        .sidebar-feedback-section {
+            margin-top: 8px;
+            background: rgba(255,255,255,0.10);
+            border-radius: 12px;
+            padding: 14px 8px 14px 14px;
+            box-shadow: 0 2px 12px rgba(0,123,255,0.10);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-height: 220px;
+            height: 220px;
+            max-height: 260px;
+        }
+        .sidebar-feedback-title {
+            font-size: 1.13em;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: text-decoration 0.2s;
+            text-decoration: underline dotted transparent;
+        }
+        .sidebar-feedback-title:hover {
+            text-decoration: underline dotted #fff;
+        }
+        .feedback-carousel {
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+        }
+        .feedback-cards-outer {
+            height: 180px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        .feedback-cards-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            animation: feedbackScroll 16s linear infinite;
+            will-change: transform;
+        }
+        @keyframes feedbackScroll {
+            0% { transform: translateY(0); }
+            10% { transform: translateY(0); }
+            20% { transform: translateY(-72px); }
+            30% { transform: translateY(-72px); }
+            40% { transform: translateY(-144px); }
+            50% { transform: translateY(-144px); }
+            60% { transform: translateY(-216px); }
+            70% { transform: translateY(-216px); }
+            80% { transform: translateY(-288px); }
+            90% { transform: translateY(-288px); }
+            100% { transform: translateY(0); }
+        }
+        .feedback-card {
+            background: rgba(255,255,255,0.22);
+            border-radius: 10px;
+            padding: 12px 14px 12px 12px;
+            color: #fff;
+            font-size: 1.05em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            min-height: 56px;
+            max-width: 240px;
+            border-left: 4px solid #00c6ff;
+            animation: feedbackCardFadeIn 0.8s;
+        }
+        @keyframes feedbackCardFadeIn {
+            from { opacity: 0; transform: translateY(20px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        /* Feedback panel in main content */
+        #panel-feedback {
+            display: none;
+            animation: fadeIn 0.7s;
+        }
+        #panel-feedback.active {
+            display: block;
+            animation: fadeIn 0.7s;
+        }
+        .feedback-horizontal-container {
+            width: 100%;
+            overflow: hidden;
+            margin: 40px 0 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: 36px;
+            align-items: center;
+        }
+        .feedback-horizontal-trail {
+            width: 100vw;
+            max-width: 1400px;
+            overflow: hidden;
+            position: relative;
+            height: 110px;
+            display: flex;
+            align-items: center;
+        }
+        .feedback-horizontal-track {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            will-change: transform;
+            animation: feedbackTrailLeft 22s linear infinite;
+        }
+        .feedback-horizontal-trail.reverse .feedback-horizontal-track {
+            animation: feedbackTrailRight 22s linear infinite;
+        }
+        @keyframes feedbackTrailLeft {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        @keyframes feedbackTrailRight {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0); }
+        }
+        .feedback-card-horizontal {
+            background: rgba(0,123,255,0.09);
+            border-radius: 14px;
+            padding: 18px 22px 18px 18px;
+            color: #22223b;
+            font-size: 1.13em;
+            box-shadow: 0 4px 18px rgba(0,123,255,0.10);
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            min-width: 320px;
+            max-width: 380px;
+            border-left: 5px solid #00c6ff;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+        .feedback-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 4px;
+            border: 2px solid #fff;
+            background: #eaf4fb;
+        }
+        .feedback-user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .feedback-user-name {
+            font-weight: 700;
+            font-size: 1.07em;
+            color: #007bff;
+            margin-bottom: 2px;
+        }
+        .feedback-user-text {
+            font-size: 1em;
+            color: #22223b;
+            line-height: 1.3;
+        }
+        .main-content {
+            margin-left: 240px;
+            transition: margin-left 0.3s cubic-bezier(.4,2,.6,1);
+            padding: 2vw 2vw 2vw 2vw;
+            background: transparent;
+            min-height: calc(100vh - 64px);
+            width: calc(100vw - 240px);
+            /* Ensures content fits the remaining width */
+            box-sizing: border-box;
+        }
+        .dashboard-card {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        #city-list {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card-img-top {
+            width: 100%;
+            min-height: 120px;
+            max-height: 200px;
+        }
+        @media (max-width: 1200px) {
+            .dashboard-card, #city-list {
+                max-width: 98vw;
+            }
+        }
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 64px;
+            }
+            .main-content {
+                margin-left: 64px;
+                width: calc(100vw - 64px);
+                padding: 1vw;
+            }
+            .dashboard-card, #city-list {
+                max-width: 100vw;
+            }
+        }
+        @media (max-width: 600px) {
+            .topbar-title {
+                font-size: 1.1rem;
+            }
+            .main-content {
+                padding: 0.5vw;
+            }
+            .dashboard-card, #city-list {
+                max-width: 100vw;
+            }
+            .card-img-top {
+                min-height: 80px;
+                max-height: 120px;
+            }
+        }
+        /* Night mode styles */
+        .night-mode {
+            background: #181c24 !important;
+            color: #e0e6ef !important;
+        }
+        .night-mode .topbar {
+            background: #232a36 !important;
+            border-bottom: 1px solid #2c3442 !important;
+            box-shadow: 0 2px 8px #232a36 !important;
+        }
+        .night-mode .topbar-title,
+        .night-mode .topbar-admin-label {
+            color: #00c6ff !important;
+        }
+        .night-mode .dashboard-card,
+        .night-mode #city-list,
+        .night-mode #output,
+        .night-mode .modal-content {
+            background: #232a36 !important;
+            color: #e0e6ef !important;
+            border-color: #2c3442 !important;
+        }
+        .night-mode .card {
+            background: #232a36 !important;
+            color: #e0e6ef !important;
+            border-color: #2c3442 !important;
+        }
+        .night-mode .card-title,
+        .night-mode .btn-outline-primary {
+            color: #00c6ff !important;
+        }
+        .night-mode .btn-outline-primary {
+            border-color: #00c6ff !important;
+        }
+        .night-mode .btn-outline-primary:hover {
+            background: #00c6ff !important;
+            color: #181c24 !important;
+        }
+        .night-mode .form-select,
+        .night-mode .form-control {
+            background: #232a36 !important;
+            color: #e0e6ef !important;
+            border-color: #2c3442 !important;
+        }
+        .night-mode .dropdown-menu {
+            background: #232a36 !important;
+            color: #e0e6ef !important;
+        }
+        .night-mode .dropdown-item {
+            color: #e0e6ef !important;
+        }
+        .night-mode .dropdown-item:hover, .night-mode .dropdown-item:focus {
+            background: #181c24 !important;
+            color: #00c6ff !important;
+        }
+        .night-mode .modal-content {
+            background: #232a36 !important;
+            color: #e0e6ef !important;
+        }
+        .night-mode label,
+        .night-mode .form-check-label {
+            color: #e0e6ef !important;
+        }
+        .night-mode .form-check-input:checked {
+            background-color: #00c6ff !important;
+            border-color: #00c6ff !important;
+        }
+        .night-mode .btn-primary {
+            background: linear-gradient(90deg, #007bff 60%, #00c6ff 100%) !important;
+            color: #fff !important;
+            border: none !important;
+        }
+        .night-mode .btn-primary:hover {
+            background: linear-gradient(90deg, #00c6ff 60%, #007bff 100%) !important;
+            color: #fff !important;
+        }
+        .night-mode .shadow-sm {
+            box-shadow: 0 2px 12px #232a36 !important;
+        }
+        .night-mode .text-primary {
+            color: #00c6ff !important;
+        }
+        .night-mode .text-muted {
+            color: #b6c6e0 !important;
+        }
+        .night-mode .form-text {
+            color: #b6c6e0 !important;
+        }
+        .night-mode #map,
+        .night-mode #map-container {
+            filter: invert(0.92) hue-rotate(180deg) brightness(0.95) contrast(0.95);
+            /* This inverts map tiles for a dark effect */
+        }
+        /* Panel transitions */
+        .panel-section {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.4s, transform 0.4s;
+        }
+        .panel-section.hide {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            left: 0; right: 0;
+            transform: translateY(30px);
+        }
+        /* Tour Guides Panel */
+        #panel-tour-guides {
+            display: none;
+            animation: fadeIn 0.7s;
+        }
+        #panel-tour-guides.active {
+            display: block;
+            animation: fadeIn 0.7s;
+        }
+        .tour-guides-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            gap: 12px;
+        }
+        .tour-guides-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #007bff;
+            margin-bottom: 0;
+        }
+        .tour-guides-sort {
+            min-width: 220px;
+            max-width: 320px;
+        }
+        .tour-guides-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            justify-content: center;
+        }
+        .tour-guide-card {
+            background: #f4f8fc;
+            border: 2px solid #a7d8ff;
+            border-radius: 18px;
+            box-shadow: 0 2px 12px rgba(0,123,255,0.08);
+            padding: 22px 28px 18px 22px;
+            min-width: 320px;
+            max-width: 370px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+            transition: box-shadow 0.2s, border 0.2s;
+        }
+        .tour-guide-card:hover {
+            box-shadow: 0 6px 24px #a7d8ff55;
+            border-color: #007bff;
+        }
+        .tour-guide-city {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #007bff;
+            margin-bottom: 2px;
+        }
+        .tour-guide-name {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #22223b;
+        }
+        .tour-guide-contact {
+            font-size: 1em;
+            color: #444;
+            margin-bottom: 2px;
+        }
+        .tour-guide-price {
+            font-size: 1.08em;
+            color: #00b894;
+            font-weight: 600;
+        }
+        .tour-guide-transport {
+            font-size: 0.98em;
+            color: #555;
+            margin-bottom: 2px;
+        }
+        .dashboard-section-title {
+            font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+            font-size: 2.1rem;
+            font-weight: 700;
+            color: #22223b;
+            margin-bottom: 0.7em;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 8px rgba(0,123,255,0.08);
+        }
+        .accomodation-header {
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+        .accomodation-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            justify-content: center;
+        }
+        .accomodation-card {
+            background: #f8fafd;
+            border: 2px solid #a7d8ff;
+            border-radius: 18px;
+            box-shadow: 0 2px 12px rgba(0,123,255,0.08);
+            padding: 22px 28px 18px 22px;
+            min-width: 320px;
+            max-width: 370px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+            transition: box-shadow 0.2s, border 0.2s;
+        }
+        .accomodation-card:hover {
+            box-shadow: 0 6px 24px #a7d8ff55;
+            border-color: #007bff;
+        }
+        .accomodation-name {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #007bff;
+        }
+        .accomodation-type {
+            font-size: 1.05em;
+            color: #444;
+        }
+        .accomodation-price {
+            font-size: 1.08em;
+            color: #00b894;
+            font-weight: 600;
+        }
+        .accomodation-contact {
+            font-size: 1em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-header-title">E TOURISM</span>
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">&#9776;</button>
+        </div>
+        <div class="sidebar-menu">
+            <button class="sidebar-menu-btn active" id="navDashboard" type="button">
+                <i class="bi bi-bar-chart-fill"></i>
+                <span>Dashboard</span>
+            </button>
+            <button class="sidebar-menu-btn" id="navRouteMap" type="button">
+                <i class="bi bi-geo-alt-fill"></i>
+                <span>Route Map</span>
+            </button>
+            <button class="sidebar-menu-btn" id="navTourGuides" type="button">
+                <i class="bi bi-person-badge-fill"></i>
+                <span>Tour Guides</span>
+            </button>
+            <button class="sidebar-menu-btn" id="navAccomodation" type="button">
+                <i class="bi bi-house-door-fill"></i>
+                <span>Accomodation</span>
+            </button>
+            <button class="sidebar-menu-btn" id="navPlanner" type="button">
+                <i class="bi bi-calendar3"></i>
+                <span>Planner</span>
+            </button>
+            <!-- Help & Support button -->
+            <button class="sidebar-menu-btn" id="navHelpSupport" type="button">
+                <i class="bi bi-question-circle-fill"></i>
+                <span>Help & Support</span>
+            </button>
+            <!-- Emergency button -->
+            <button class="sidebar-menu-btn" id="navEmergency" type="button">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Emergency</span>
+            </button>
+        </div>
+        <div class="sidebar-footer" id="sidebarFooter">
+            <div class="sidebar-feedback-section">
+                <div class="sidebar-feedback-title" id="showFeedbackPanelBtn" style="cursor:pointer;">
+                    Recent Feedback
+                </div>
+                <div class="feedback-carousel">
+                    <div class="feedback-cards-outer">
+                        <div class="feedback-cards-inner" id="feedbackCardsInner">
+                            <div class="feedback-card">
+                                <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Ananya&background=007bff&color=fff" alt="Ananya">
+                                <div class="feedback-user-info">
+                                    <span class="feedback-user-name">Ananya</span>
+                                    <span class="feedback-user-text">Loved the city recommendations! 🌟</span>
+                                </div>
+                            </div>
+                            <div class="feedback-card">
+                                <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Rahul&background=00c6ff&color=fff" alt="Rahul">
+                                <div class="feedback-user-info">
+                                    <span class="feedback-user-name">Rahul</span>
+                                    <span class="feedback-user-text">The route map is super helpful for planning.</span>
+                                </div>
+                            </div>
+                            <div class="feedback-card">
+                                <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Priya&background=ffb6b9&color=fff" alt="Priya">
+                                <div class="feedback-user-info">
+                                    <span class="feedback-user-name">Priya</span>
+                                    <span class="feedback-user-text">Night mode looks amazing! 😍</span>
+                                </div>
+                            </div>
+                            <div class="feedback-card">
+                                <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Arjun&background=ffd166&color=fff" alt="Arjun">
+                                <div class="feedback-user-info">
+                                    <span class="feedback-user-name">Arjun</span>
+                                    <span class="feedback-user-text">Easy to use and very informative.</span>
+                                </div>
+                            </div>
+                            <div class="feedback-card">
+                                <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Sneha&background=06d6a0&color=fff" alt="Sneha">
+                                <div class="feedback-user-info">
+                                    <span class="feedback-user-name">Sneha</span>
+                                    <span class="feedback-user-text">Great UI and smooth experience!</span>
+                                </div>
+                            </div>
+                            <div class="feedback-card">
+                                <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Vikram&background=118ab2&color=fff" alt="Vikram">
+                                <div class="feedback-user-info">
+                                    <span class="feedback-user-name">Vikram</span>
+                                    <span class="feedback-user-text">Helped me discover new places.</span>
+                                </div>
+                            </div>
+                            <div class="feedback-card">
+                                <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Meera&background=ef476f&color=fff" alt="Meera">
+                                <div class="feedback-user-info">
+                                    <span class="feedback-user-name">Meera</span>
+                                    <span class="feedback-user-text">Feedback section is a nice touch!</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- User dropdown (shown if logged in) -->
+            <div id="userDropdown" style="display:none; margin-top:10px;">
+                <div class="dropdown">
+                    <button class="btn btn-link text-white dropdown-toggle" type="button" id="userMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration:none;">
+                        <span id="userIcon" style="font-size:1.1em;">&#128100;</span>
+                        <span id="usernameDisplay"></span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="userMenuBtn">
+                        <li>
+                            <button class="dropdown-item" id="profileBtn">
+                                <span>Profile</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" id="themeToggleBtn">
+                                <span id="themeToggleText">Night Mode</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" id="logoutBtn">Logout</button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <!-- Login button (shown if not logged in) -->
+            <button class="btn btn-link btn-sm text-white" id="loginBtn" style="text-decoration:none; margin-top:10px;">Login</button>
+        </div>
+    </div>
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Dashboard Panel -->
+        <div id="panel-dashboard" class="panel-section">
+            <h2 class="dashboard-title">Dashboard</h2>
+            <p class="mb-4 text-muted">Explore Insights and Trends in Real-Time</p>
+            <!-- Graphs Row: Users & Visitors, side by side in circular frames -->
+            <div class="row mb-4 justify-content-center">
+                <div class="col-md-6 d-flex justify-content-center mb-3 mb-md-0">
+                    <div class="dashboard-card p-5 d-flex flex-column align-items-center"
+                         style="border-radius: 36px; width: 520px; height: 520px; box-shadow: 0 12px 36px rgba(0,123,255,0.18); background: #f4f8fc; border: 3px solid #007bff;">
+                        <h3 class="dashboard-section-title">Number of Users</h3>
+                        <canvas id="userCountChart" width="400" height="400"
+                                style="border-radius: 24px; background: #fff; border: 2.5px solid #007bff; box-shadow: 0 2px 12px rgba(0,123,255,0.08);"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex justify-content-center">
+                    <div class="dashboard-card p-5 d-flex flex-column align-items-center"
+                         style="border-radius: 36px; width: 520px; height: 520px; box-shadow: 0 12px 36px rgba(0,123,255,0.18); background: #f4f8fc; border: 3px solid #007bff;">
+                        <h3 class="dashboard-section-title">Visitors per City</h3>
+                        <canvas id="visitorsPerCityChart" width="400" height="400"
+                                style="border-radius: 24px; background: #fff; border: 2.5px solid #007bff; box-shadow: 0 2px 12px rgba(0,123,255,0.08);"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="dashboard-card" style="margin-top: 90px;">
+                <h3 class="dashboard-section-title mb-3">Available Cities</h3>
+                <div class="row g-3" id="city-list">
+                    {% for city in cities %}
+                    <div class="col-lg-4 col-md-6 col-sm-12 mb-4 d-flex">
+                        <div class="card h-100 shadow-sm flex-fill">
+                            <img 
+                                src="{{ url_for('static', filename='images/' ~ city ~ '.jpeg') }}" 
+                                class="card-img-top" 
+                                alt="{{ city }} image"
+                                style="object-fit:cover; height:180px;"
+                                onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg';"
+                            >
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title mb-2">{{ city }}</h6>
+                                <a href="https://en.wikipedia.org/wiki/{{ city|replace(' ', '_') }}" target="_blank" class="btn btn-outline-primary btn-sm mt-auto">Wikipedia</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <!-- Points of Interest + Route Map Panel -->
+        <div id="panel-route" class="panel-section hide">
+            <div class="row">
+                <div class="col-lg-5 mb-4 mb-lg-0">
+                    <h2 class="dashboard-title">Points of Interest</h2>
+                    <div class="d-flex flex-column align-items-center">
+                        <div style="width: 100%; max-width: 400px;">
+                            <form id="tsp-form" class="mb-4 p-3 rounded shadow-sm" style="background: #f8fafd;">
+                                <div class="mb-3">
+                                    <label class="fw-semibold mb-1">Select Cities (choose at least 2):</label>
+                                    <select id="cities" class="form-select" multiple size="8">
+                                        {% for city in cities %}
+                                        <option value="{{ city }}">{{ city }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="form-text text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple cities.</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-semibold mb-1">Select Start City:</label>
+                                    <select id="start" class="form-select"></select>
+                                </div>
+                                <button class="btn btn-primary w-100" type="submit" style="background: linear-gradient(90deg, #007bff 60%, #00c6ff 100%);">Run Optimization</button>
+                            </form>
+                        </div>
+                        <div id="output" class="mt-4 p-3 rounded shadow-sm" style="background: #f8fafd; width: 100%; max-width: 500px; overflow-x: auto; max-height: 80vh; overflow-y: auto;">
+                            <div id="best-path"></div>
+                            <div id="total-distance"></div>
+                            <div id="weather-matrix"></div>
+                            <div id="traffic-matrix"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h2 class="dashboard-title mb-0">Route Map</h2>
+                        <button class="btn btn-outline-primary btn-sm" id="showTourGuidesBtn" style="margin-left:auto;">Tour Guides</button>
+                    </div>
+                    <div id="map-container" style="height: 70vh; min-height: 400px; margin-top: 24px; border-radius: 8px;">
+                        <div id="map" style="height: 100%; width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Tour Guides Panel -->
+        <div id="panel-tour-guides" class="panel-section">
+            <div class="tour-guides-header">
+                <span class="tour-guides-title">Tour Guides</span>
+                <select class="form-select tour-guides-sort" id="tourGuidesSort">
+                    <option value="city">Sort by City</option>
+                    <option value="price">Sort by Price</option>
+                    <option value="name">Sort by Name</option>
+                    <option value="transport">Sort by Transport</option>
+                </select>
+                <button class="btn btn-outline-primary btn-sm" id="backToRouteMapBtn">Back to Route Map</button>
+            </div>
+            <div class="tour-guides-list" id="tourGuidesList">
+                <!-- Tour guide cards will be rendered here -->
+            </div>
+        </div>
+        <!-- Feedback Panel -->
+        <div id="panel-feedback" class="panel-section">
+            <h2 class="dashboard-title" style="text-align:center;">Recent Feedback</h2>
+            <div class="feedback-horizontal-container">
+                <div class="feedback-horizontal-trail">
+                    <div class="feedback-horizontal-track">
+                        <!-- Repeat cards twice for seamless loop -->
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Ananya&background=007bff&color=fff" alt="Ananya">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Ananya</span>
+                                <span class="feedback-user-text">Loved the city recommendations! 🌟</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Rahul&background=00c6ff&color=fff" alt="Rahul">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Rahul</span>
+                                <span class="feedback-user-text">The route map is super helpful for planning.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Priya&background=ffb6b9&color=fff" alt="Priya">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Priya</span>
+                                <span class="feedback-user-text">Night mode looks amazing! 😍</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Arjun&background=ffd166&color=fff" alt="Arjun">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Arjun</span>
+                                <span class="feedback-user-text">Easy to use and very informative.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Sneha&background=06d6a0&color=fff" alt="Sneha">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Sneha</span>
+                                <span class="feedback-user-text">Great UI and smooth experience!</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Vikram&background=118ab2&color=fff" alt="Vikram">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Vikram</span>
+                                <span class="feedback-user-text">Helped me discover new places.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Meera&background=ef476f&color=fff" alt="Meera">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Meera</span>
+                                <span class="feedback-user-text">Feedback section is a nice touch!</span>
+                            </div>
+                        </div>
+                        <!-- Repeat for seamless animation -->
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Ananya&background=007bff&color=fff" alt="Ananya">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Ananya</span>
+                                <span class="feedback-user-text">Loved the city recommendations! 🌟</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Rahul&background=00c6ff&color=fff" alt="Rahul">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Rahul</span>
+                                <span class="feedback-user-text">The route map is super helpful for planning.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Priya&background=ffb6b9&color=fff" alt="Priya">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Priya</span>
+                                <span class="feedback-user-text">Night mode looks amazing! 😍</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Arjun&background=ffd166&color=fff" alt="Arjun">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Arjun</span>
+                                <span class="feedback-user-text">Easy to use and very informative.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Sneha&background=06d6a0&color=fff" alt="Sneha">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Sneha</span>
+                                <span class="feedback-user-text">Great UI and smooth experience!</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Vikram&background=118ab2&color=fff" alt="Vikram">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Vikram</span>
+                                <span class="feedback-user-text">Helped me discover new places.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Meera&background=ef476f&color=fff" alt="Meera">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Meera</span>
+                                <span class="feedback-user-text">Feedback section is a nice touch!</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="feedback-horizontal-trail reverse">
+                    <div class="feedback-horizontal-track">
+                        <!-- Repeat cards twice for seamless loop, reverse order -->
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Meera&background=ef476f&color=fff" alt="Meera">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Meera</span>
+                                <span class="feedback-user-text">Feedback section is a nice touch!</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Vikram&background=118ab2&color=fff" alt="Vikram">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Vikram</span>
+                                <span class="feedback-user-text">Helped me discover new places.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Sneha&background=06d6a0&color=fff" alt="Sneha">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Sneha</span>
+                                <span class="feedback-user-text">Great UI and smooth experience!</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Arjun&background=ffd166&color=fff" alt="Arjun">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Arjun</span>
+                                <span class="feedback-user-text">Easy to use and very informative.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Priya&background=ffb6b9&color=fff" alt="Priya">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Priya</span>
+                                <span class="feedback-user-text">Night mode looks amazing! 😍</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Rahul&background=00c6ff&color=fff" alt="Rahul">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Rahul</span>
+                                <span class="feedback-user-text">The route map is super helpful for planning.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Ananya&background=007bff&color=fff" alt="Ananya">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Ananya</span>
+                                <span class="feedback-user-text">Loved the city recommendations! 🌟</span>
+                            </div>
+                        </div>
+                        <!-- Repeat for seamless animation -->
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Meera&background=ef476f&color=fff" alt="Meera">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Meera</span>
+                                <span class="feedback-user-text">Feedback section is a nice touch!</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Vikram&background=118ab2&color=fff" alt="Vikram">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Vikram</span>
+                                <span class="feedback-user-text">Helped me discover new places.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Sneha&background=06d6a0&color=fff" alt="Sneha">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Sneha</span>
+                                <span class="feedback-user-text">Great UI and smooth experience!</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Arjun&background=ffd166&color=fff" alt="Arjun">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Arjun</span>
+                                <span class="feedback-user-text">Easy to use and very informative.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Priya&background=ffb6b9&color=fff" alt="Priya">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Priya</span>
+                                <span class="feedback-user-text">Night mode looks amazing! 😍</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Rahul&background=00c6ff&color=fff" alt="Rahul">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Rahul</span>
+                                <span class="feedback-user-text">The route map is super helpful for planning.</span>
+                            </div>
+                        </div>
+                        <div class="feedback-card-horizontal">
+                            <img class="feedback-user-avatar" src="https://ui-avatars.com/api/?name=Ananya&background=007bff&color=fff" alt="Ananya">
+                            <div class="feedback-user-info">
+                                <span class="feedback-user-name">Ananya</span>
+                                <span class="feedback-user-text">Loved the city recommendations! 🌟</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Accomodation Panel -->
+        <div id="panel-accomodation" class="panel-section" style="display:none;">
+            <div class="accomodation-header mb-4 d-flex flex-wrap align-items-center gap-3">
+                <span class="dashboard-section-title" style="font-size:2rem;">Accomodation</span>
+                <select class="form-select" id="accomodationCitySelect" style="min-width:220px;max-width:320px;">
+                    <option value="">Select City</option>
+                    {% for city in cities %}
+                    <option value="{{ city }}">{{ city }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="accomodationList" class="accomodation-list d-flex flex-wrap gap-4 justify-content-center">
+                <!-- Stay cards will be rendered here -->
+            </div>
+        </div>
+        <!-- Help & Support Panel -->
+        <div id="panel-help-support" class="panel-section" style="display:none;">
+            <h2 class="dashboard-title">Help & Support</h2>
+            <div class="dashboard-card" style="max-width:700px;">
+                <h4 class="mb-3">Frequently Asked Questions</h4>
+                <div class="accordion mb-4" id="faqAccordion">
+                    <!-- Removed the first FAQ -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq2h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false" aria-controls="faq2">
+                                How do I switch to Night Mode?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" aria-labelledby="faq2h" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Use the user menu in the sidebar footer to toggle Night Mode.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq3h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false" aria-controls="faq3">
+                                Who can I contact for technical support?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" aria-labelledby="faq3h" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                See the contact information below.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq4h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" aria-expanded="false" aria-controls="faq4">
+                                How do I log in or out?
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse" aria-labelledby="faq4h" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Use the Login button or user menu in the sidebar footer.
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Additional FAQs -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq5h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" aria-expanded="false" aria-controls="faq5">
+                                How do I use the Route Map to plan my trip?
+                            </button>
+                        </h2>
+                        <div id="faq5" class="accordion-collapse collapse" aria-labelledby="faq5h" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Go to the Route Map panel, select at least two cities, choose a start city, and click "Run Optimization" to see the best route and map.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq6h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6" aria-expanded="false" aria-controls="faq6">
+                                Where can I find information about tour guides?
+                            </button>
+                        </h2>
+                        <div id="faq6" class="accordion-collapse collapse" aria-labelledby="faq6h" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Visit the "Tour Guides" panel from the sidebar to view and sort available guides by city, price, name, or transport.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq7h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7" aria-expanded="false" aria-controls="faq7">
+                                How do I find accommodation options in a city?
+                            </button>
+                        </h2>
+                        <div id="faq7" class="accordion-collapse collapse" aria-labelledby="faq7h" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Go to the "Accomodation" panel and select a city to view available stay options, including contact details and prices.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq8h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8" aria-expanded="false" aria-controls="faq8">
+                                Why can't I see the map or charts?
+                            </button>
+                        </h2>
+                        <div id="faq8" class="accordion-collapse collapse" aria-labelledby="faq8h" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Please ensure your internet connection is active and that your browser supports JavaScript. Try refreshing the page.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq9h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq9" aria-expanded="false" aria-controls="faq9">
+                                How do I give feedback about the website?
+                            </button>
+                        </h2>
+                        <div id="faq9" class="accordion-collapse collapse" aria-labelledby="faq9h" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Use the "Recent Feedback" section in the sidebar or contact us directly via email for suggestions and comments.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h4 class="mb-2">Contact Information</h4>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item">
+                        <b>Email:</b> <a href="mailto:support@etourism.com">support@etourism.com</a>
+                    </li>
+                    <li class="list-group-item">
+                        <b>Phone:</b> +91 98765 43210
+                    </li>
+                    <li class="list-group-item">
+                        <b>Office Hours:</b> Mon-Fri, 9:00 AM - 6:00 PM IST
+                    </li>
+                </ul>
+                <div class="alert alert-info">
+                    For urgent issues, please email us with "URGENT" in the subject line.
+                </div>
+            </div>
+        </div>
+        <!-- Emergency Panel -->
+        <div id="panel-emergency" class="panel-section" style="display:none;">
+            <h2 class="dashboard-title">Emergency Contacts</h2>
+            <div class="dashboard-card" style="max-width:900px;">
+                <p class="mb-3 text-danger fw-bold">In case of emergency, contact the nearest police station or helpline below.</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>City</th>
+                                <th>Police Station</th>
+                                <th>Police Contact</th>
+                                <th>Emergency Helpline</th>
+                                <th>Ambulance</th>
+                                <th>Fire</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Kolkata</td>
+                                <td>Lalbazar Police HQ</td>
+                                <td>+91 33 2214 3024</td>
+                                <td>100 / 112</td>
+                                <td>102</td>
+                                <td>101</td>
+                            </tr>
+                            <tr>
+                                <td>Darjeeling</td>
+                                <td>Darjeeling Sadar PS</td>
+                                <td>+91 354 225 4212</td>
+                                <td>100 / 112</td>
+                                <td>+91 354 225 4333</td>
+                                <td>101</td>
+                            </tr>
+                            <tr>
+                                <td>Howrah</td>
+                                <td>Howrah City Police HQ</td>
+                                <td>+91 33 2641 2001</td>
+                                <td>100 / 112</td>
+                                <td>+91 33 2641 2002</td>
+                                <td>101</td>
+                            </tr>
+                            <tr>
+                                <td>Asansol</td>
+                                <td>Asansol South PS</td>
+                                <td>+91 341 228 1122</td>
+                                <td>100 / 112</td>
+                                <td>+91 341 228 1133</td>
+                                <td>101</td>
+                            </tr>
+                            <tr>
+                                <td>Kharagpur</td>
+                                <td>Kharagpur Town PS</td>
+                                <td>+91 3222 255 222</td>
+                                <td>100 / 112</td>
+                                <td>+91 3222 255 333</td>
+                                <td>101</td>
+                            </tr>
+                            <tr>
+                                <td>Siliguri</td>
+                                <td>Siliguri PS</td>
+                                <td>+91 353 243 0100</td>
+                                <td>100 / 112</td>
+                                <td>+91 353 243 0200</td>
+                                <td>101</td>
+                            </tr>
+                            <tr>
+                                <td>Malda</td>
+                                <td>Malda PS</td>
+                                <td>+91 3512 252 323</td>
+                                <td>100 / 112</td>
+                                <td>+91 3512 252 324</td>
+                                <td>101</td>
+                            </tr>
+                            <tr>
+                                <td>Bardhaman</td>
+                                <td>Bardhaman PS</td>
+                                <td>+91 342 266 2511</td>
+                                <td>100 / 112</td>
+                                <td>+91 342 266 2512</td>
+                                <td>101</td>
+                            </tr>
+                            <tr>
+                                <td>Durgapur</td>
+                                <td>Durgapur PS</td>
+                                <td>+91 343 254 4801</td>
+                                <td>100 / 112</td>
+                                <td>+91 343 254 4802</td>
+                                <td>101</td>
+                            </tr>
+                            <tr>
+                                <td>Hooghly</td>
+                                <td>Chinsurah PS</td>
+                                <td>+91 33 2680 2222</td>
+                                <td>100 / 112</td>
+                                <td>+91 33 2680 3333</td>
+                                <td>101</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-warning mt-3">
+                    <b>Note:</b> 112 is the national emergency helpline in India (Police, Fire, Ambulance).
+                </div>
+            </div>
+        </div>
+        <!-- Planner Panel -->
+        <div id="panel-planner" class="panel-section" style="display:none;">
+            <h2 class="dashboard-title" style="text-align:center;">Year Planner - <span id="plannerYear"></span></h2>
+            <div id="plannerCalendar" style="display:flex;flex-wrap:wrap;gap:32px;justify-content:center;margin-top:32px;"></div>
+        </div>
+    </div>
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal" tabindex="-1" style="display:none; background:rgba(0,0,0,0.4);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:12px;">
+                <div class="modal-header">
+                    <h5 class="modal-title">Settings</h5>
+                    <button type="button" class="btn-close" id="closeSettings"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggleNightMode">
+                        <label class="form-check-label" for="toggleNightMode">Night Mode</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal" tabindex="-1" style="display:none; background:rgba(0,0,0,0.4);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:12px;">
+                <div class="modal-header">
+                    <h5 class="modal-title">Login</h5>
+                    <button type="button" class="btn-close" id="closeLogin"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="loginUsername" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="loginUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="loginPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                        <div id="loginError" class="text-danger mt-2" style="display:none;"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- User Profile Modal -->
+    <div id="userProfileModal" class="modal" tabindex="-1" style="display:none; background:rgba(0,0,0,0.4);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:18px; box-shadow:0 8px 32px #007bff44;">
+                <div class="modal-header" style="background:linear-gradient(90deg,#007bff 60%,#00c6ff 100%);border-radius:18px 18px 0 0;">
+                    <h5 class="modal-title text-white" style="font-weight:700;letter-spacing:1px;">User Profile</h5>
+                    <button type="button" class="btn-close" id="closeUserProfile"></button>
+                </div>
+                <div class="modal-body" id="userProfileBody" style="background:#f8fafd;">
+                    <!-- Profile info will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.js"></script>
+    <script src="/static/js/script.js"></script>
+    <script>
+        // Sidebar toggle logic
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const mainContent = document.getElementById('mainContent');
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('sidebar-collapsed');
+        });
+
+        // Panel switching logic
+        const navDashboard = document.getElementById('navDashboard');
+        const navRouteMap = document.getElementById('navRouteMap');
+        const navTourGuides = document.getElementById('navTourGuides');
+        const navAccomodation = document.getElementById('navAccomodation');
+        const navHelpSupport = document.getElementById('navHelpSupport');
+        const navEmergency = document.getElementById('navEmergency');
+        const navPlanner = document.getElementById('navPlanner');
+        const panelDashboard = document.getElementById('panel-dashboard');
+        const panelRoute = document.getElementById('panel-route');
+        const panelFeedback = document.getElementById('panel-feedback');
+        const panelTourGuides = document.getElementById('panel-tour-guides');
+        const panelAccomodation = document.getElementById('panel-accomodation');
+        const panelHelpSupport = document.getElementById('panel-help-support');
+        const panelEmergency = document.getElementById('panel-emergency');
+        const panelPlanner = document.getElementById('panel-planner');
+        const showFeedbackPanelBtn = document.getElementById('showFeedbackPanelBtn');
+        const showTourGuidesBtn = document.getElementById('showTourGuidesBtn');
+        const backToRouteMapBtn = document.getElementById('backToRouteMapBtn');
+        const tourGuidesSort = document.getElementById('tourGuidesSort');
+        const tourGuidesList = document.getElementById('tourGuidesList');
+        const accomodationCitySelect = document.getElementById('accomodationCitySelect');
+        const accomodationList = document.getElementById('accomodationList');
+
+        // Example tour guides data (now with 35 real-like Indian company names)
+        const tourGuidesData = [
+            { name: "Amit Roy", city: "Kolkata", contact: "+91 9876543210", price: 1200, transport: "Car, Bus" },
+            { name: "Priya Sen", city: "Darjeeling", contact: "+91 9123456780", price: 1800, transport: "Jeep, Car" },
+            { name: "Rahul Das", city: "Siliguri", contact: "+91 9988776655", price: 1500, transport: "Car" },
+            { name: "Sneha Paul", city: "Howrah", contact: "+91 8877665544", price: 1100, transport: "Bus, Train" },
+            { name: "Vikram Gupta", city: "Kharagpur", contact: "+91 7766554433", price: 1300, transport: "Car, Bike" },
+            { name: "Meera Ghosh", city: "Malda", contact: "+91 6655443322", price: 1000, transport: "Bus" },
+            { name: "Arjun Singh", city: "Durgapur", contact: "+91 5544332211", price: 1600, transport: "Car, Bus" },
+            { name: "Riya Das", city: "Asansol", contact: "+91 4433221100", price: 1400, transport: "Car, Train" },
+            { name: "Sourav Pal", city: "Bardhaman", contact: "+91 3322110099", price: 1250, transport: "Car" },
+            { name: "Puja Saha", city: "Hooghly", contact: "+91 2211009988", price: 1350, transport: "Bus, Car" },
+            { name: "Sharma Travels", city: "Kolkata", contact: "+91 9001122334", price: 1700, transport: "Car, Bus, Train" },
+            { name: "Bengal Heritage Tours", city: "Kolkata", contact: "+91 9830012345", price: 2100, transport: "Car, Bus" },
+            { name: "Darjeeling Dream Tours", city: "Darjeeling", contact: "+91 9800112233", price: 2200, transport: "Jeep, Car" },
+            { name: "Siliguri Explorer", city: "Siliguri", contact: "+91 9900112233", price: 1550, transport: "Car, Bus" },
+            { name: "Eastern India Guides", city: "Kharagpur", contact: "+91 9876501234", price: 1450, transport: "Car, Bike" },
+            { name: "Royal Bengal Tours", city: "Kolkata", contact: "+91 9830023456", price: 2500, transport: "Car, Bus, Train" },
+            { name: "Asansol Adventure", city: "Asansol", contact: "+91 9123456701", price: 1200, transport: "Car, Bus" },
+            { name: "Malda Magic Tours", city: "Malda", contact: "+91 9988776654", price: 1150, transport: "Bus, Car" },
+            { name: "Durgapur Delight", city: "Durgapur", contact: "+91 8877665543", price: 1750, transport: "Car, Bus" },
+            { name: "Hooghly Heritage", city: "Hooghly", contact: "+91 7766554432", price: 1300, transport: "Bus, Car" },
+            { name: "Howrah Holidays", city: "Howrah", contact: "+91 6655443321", price: 1250, transport: "Bus, Train" },
+            { name: "Bardhaman Bliss", city: "Bardhaman", contact: "+91 5544332210", price: 1400, transport: "Car, Bus" },
+            { name: "Kolkata City Tours", city: "Kolkata", contact: "+91 9433001122", price: 1600, transport: "Car, Bus" },
+            { name: "Siliguri Safari", city: "Siliguri", contact: "+91 9433011223", price: 1700, transport: "Car, Jeep" },
+            { name: "Darjeeling Delight", city: "Darjeeling", contact: "+91 9433022334", price: 2000, transport: "Jeep, Car" },
+            { name: "Eastern Express", city: "Kharagpur", contact: "+91 9433033445", price: 1500, transport: "Car, Bus" },
+            { name: "Malda Marvels", city: "Malda", contact: "+91 9433044556", price: 1100, transport: "Bus" },
+            { name: "Durgapur Discovery", city: "Durgapur", contact: "+91 9433055667", price: 1650, transport: "Car, Bus" },
+            { name: "Asansol Adventure Co.", city: "Asansol", contact: "+91 9433066778", price: 1350, transport: "Car, Train" },
+            { name: "Hooghly Holidays", city: "Hooghly", contact: "+91 9433077889", price: 1450, transport: "Bus, Car" },
+            { name: "Bardhaman Backpackers", city: "Bardhaman", contact: "+91 9433088990", price: 1200, transport: "Car" },
+            { name: "Sunrise Tours", city: "Kolkata", contact: "+91 9433099001", price: 1550, transport: "Car, Bus" },
+            { name: "Green Valley Guides", city: "Darjeeling", contact: "+91 9433100112", price: 1950, transport: "Jeep, Car" },
+            { name: "Blue Sky Travels", city: "Siliguri", contact: "+91 9433111223", price: 1400, transport: "Car, Bus" },
+            { name: "Royal Bengal Company", city: "Kolkata", contact: "+91 9433122334", price: 2300, transport: "Car, Bus, Train" }
+        ];
+
+        function renderTourGuides(sortBy = "city") {
+            let guides = [...tourGuidesData];
+            if (sortBy === "city") {
+                guides.sort((a, b) => a.city.localeCompare(b.city));
+            } else if (sortBy === "price") {
+                guides.sort((a, b) => a.price - b.price);
+            } else if (sortBy === "name") {
+                guides.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (sortBy === "transport") {
+                guides.sort((a, b) => a.transport.localeCompare(b.transport));
+            }
+            tourGuidesList.innerHTML = guides.map(g => `
+                <div class="tour-guide-card">
+                    <div class="tour-guide-city">${g.city}</div>
+                    <div class="tour-guide-name">${g.name}</div>
+                    <div class="tour-guide-contact"><b>Contact:</b> ${g.contact}</div>
+                    <div class="tour-guide-price"><b>Price:</b> ₹${g.price}</div>
+                    <div class="tour-guide-transport"><b>Transport:</b> ${g.transport}</div>
+                </div>
+            `).join('');
+        }
+
+        // Example accomodation data (15+ per city, real-like Indian names)
+        const accomodationData = {
+            "Kolkata": [
+                { name: "Sunrise Holiday Home", type: "Holiday Home", price: "₹1800/night (Standard), ₹2500/night (Deluxe)", contact: "+91 9831000001" },
+                { name: "Bengal Heritage Inn", type: "Inn", price: "₹1200/night (Single), ₹2000/night (Double)", contact: "+91 9831000002" },
+                { name: "Victoria Guest House", type: "Guest House", price: "₹900/night (Non-AC), ₹1400/night (AC)", contact: "+91 9831000003" },
+                { name: "Park Street Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1600/night (Suite)", contact: "+91 9831000004" },
+                { name: "Howrah Residency", type: "Holiday Home", price: "₹1500/night (Standard), ₹2100/night (Premium)", contact: "+91 9831000005" },
+                { name: "Royal Bengal Resort", type: "Resort", price: "₹3200/night (Cottage), ₹4200/night (Villa)", contact: "+91 9831000006" },
+                { name: "City Comfort Stay", type: "Inn", price: "₹1300/night (Single), ₹1800/night (Double)", contact: "+91 9831000007" },
+                { name: "Eden Gardens Retreat", type: "Resort", price: "₹3500/night (Deluxe), ₹4800/night (Suite)", contact: "+91 9831000008" },
+                { name: "Ganga View Lodge", type: "Lodge", price: "₹1000/night (Standard), ₹1500/night (AC)", contact: "+91 9831000009" },
+                { name: "Salt Lake Homestay", type: "Holiday Home", price: "₹1600/night (Standard), ₹2100/night (Family)", contact: "+91 9831000010" },
+                { name: "Heritage Palace Inn", type: "Inn", price: "₹1400/night (Single), ₹1900/night (Double)", contact: "+91 9831000011" },
+                { name: "South City Residency", type: "Guest House", price: "₹1200/night (Non-AC), ₹1700/night (AC)", contact: "+91 9831000012" },
+                { name: "Lake Town Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1600/night (Suite)", contact: "+91 9831000013" },
+                { name: "New Town Resort", type: "Resort", price: "₹3000/night (Cottage), ₹4000/night (Villa)", contact: "+91 9831000014" },
+                { name: "Shantiniketan Stay", type: "Holiday Home", price: "₹1700/night (Standard), ₹2200/night (Deluxe)", contact: "+91 9831000015" }
+            ],
+            "Darjeeling": [
+                { name: "Himalayan Retreat", type: "Resort", price: "₹3500/night (Deluxe), ₹4800/night (Suite)", contact: "+91 9800100001" },
+                { name: "Tea Garden Inn", type: "Inn", price: "₹1400/night (Single), ₹2000/night (Double)", contact: "+91 9800100002" },
+                { name: "Mountain View Lodge", type: "Lodge", price: "₹1200/night (Standard), ₹1700/night (Suite)", contact: "+91 9800100003" },
+                { name: "Queen's Hill Holiday Home", type: "Holiday Home", price: "₹1800/night (Standard), ₹2500/night (Deluxe)", contact: "+91 9800100004" },
+                { name: "Darjeeling Palace Resort", type: "Resort", price: "₹3200/night (Cottage), ₹4200/night (Villa)", contact: "+91 9800100005" },
+                { name: "Kanchenjunga Homestay", type: "Holiday Home", price: "₹1600/night (Standard), ₹2100/night (Family)", contact: "+91 9800100006" },
+                { name: "Glenburn Guest House", type: "Guest House", price: "₹1100/night (Non-AC), ₹1600/night (AC)", contact: "+91 9800100007" },
+                { name: "Mall Road Residency", type: "Inn", price: "₹1300/night (Single), ₹1800/night (Double)", contact: "+91 9800100008" },
+                { name: "Pine Forest Lodge", type: "Lodge", price: "₹1200/night (Standard), ₹1700/night (Suite)", contact: "+91 9800100009" },
+                { name: "Sunrise Valley Resort", type: "Resort", price: "₹3400/night (Deluxe), ₹4500/night (Suite)", contact: "+91 9800100010" },
+                { name: "Hilltop Holiday Home", type: "Holiday Home", price: "₹1700/night (Standard), ₹2200/night (Deluxe)", contact: "+91 9800100011" },
+                { name: "Darjeeling Comfort Inn", type: "Inn", price: "₹1400/night (Single), ₹1900/night (Double)", contact: "+91 9800100012" },
+                { name: "Tea Leaf Guest House", type: "Guest House", price: "₹1200/night (Non-AC), ₹1700/night (AC)", contact: "+91 9800100013" },
+                { name: "Everest View Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1600/night (Suite)", contact: "+91 9800100014" },
+                { name: "Green Valley Resort", type: "Resort", price: "₹3200/night (Cottage), ₹4200/night (Villa)", contact: "+91 9800100015" }
+            ],
+            "Howrah": [
+                { name: "Howrah Comfort Inn", type: "Inn", price: "₹1200/night (Single), ₹1800/night (Double)", contact: "+91 9002001001" },
+                { name: "Riverside Holiday Home", type: "Holiday Home", price: "₹1600/night (Standard), ₹2100/night (Deluxe)", contact: "+91 9002001002" },
+                { name: "Bridge View Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1500/night (Suite)", contact: "+91 9002001003" },
+                { name: "Howrah Residency", type: "Guest House", price: "₹1000/night (Non-AC), ₹1400/night (AC)", contact: "+91 9002001004" },
+                { name: "Shibpur Stay", type: "Holiday Home", price: "₹1500/night (Standard), ₹2000/night (Premium)", contact: "+91 9002001005" },
+                { name: "Ganges Resort", type: "Resort", price: "₹3200/night (Cottage), ₹4200/night (Villa)", contact: "+91 9002001006" },
+                { name: "Howrah Palace Inn", type: "Inn", price: "₹1300/night (Single), ₹1800/night (Double)", contact: "+91 9002001007" },
+                { name: "Botanical Garden Retreat", type: "Resort", price: "₹3400/night (Deluxe), ₹4500/night (Suite)", contact: "+91 9002001008" },
+                { name: "Santragachi Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1600/night (Suite)", contact: "+91 9002001009" },
+                { name: "Belur Math Homestay", type: "Holiday Home", price: "₹1600/night (Standard), ₹2100/night (Family)", contact: "+91 9002001010" },
+                { name: "Howrah Heritage Guest House", type: "Guest House", price: "₹1200/night (Non-AC), ₹1700/night (AC)", contact: "+91 9002001011" },
+                { name: "Avani Stay", type: "Inn", price: "₹1400/night (Single), ₹1900/night (Double)", contact: "+91 9002001012" },
+                { name: "Liluah Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1600/night (Suite)", contact: "+91 9002001013" },
+                { name: "Howrah City Resort", type: "Resort", price: "₹3000/night (Cottage), ₹4000/night (Villa)", contact: "+91 9002001014" },
+                { name: "Shalimar Holiday Home", type: "Holiday Home", price: "₹1700/night (Standard), ₹2200/night (Deluxe)", contact: "+91 9002001015" }
+            ],
+            "Asansol": [
+                { name: "Asansol Comfort Inn", type: "Inn", price: "₹1200/night (Single), ₹1800/night (Double)", contact: "+91 9003001001" },
+                { name: "Coalfield Holiday Home", type: "Holiday Home", price: "₹1600/night (Standard), ₹2100/night (Deluxe)", contact: "+91 9003001002" },
+                { name: "Burnpur Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1500/night (Suite)", contact: "+91 9003001003" },
+                { name: "Asansol Residency", type: "Guest House", price: "₹1000/night (Non-AC), ₹1400/night (AC)", contact: "+91 9003001004" },
+                { name: "Sitarampur Stay", type: "Holiday Home", price: "₹1500/night (Standard), ₹2000/night (Premium)", contact: "+91 9003001005" },
+                { name: "Churulia Resort", type: "Resort", price: "₹3200/night (Cottage), ₹4200/night (Villa)", contact: "+91 9003001006" },
+                { name: "Asansol Palace Inn", type: "Inn", price: "₹1300/night (Single), ₹1800/night (Double)", contact: "+91 9003001007" },
+                { name: "Neamatpur Retreat", type: "Resort", price: "₹3400/night (Deluxe), ₹4500/night (Suite)", contact: "+91 9003001008" },
+                { name: "Kulti Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1600/night (Suite)", contact: "+91 9003001009" },
+                { name: "Barakar Homestay", type: "Holiday Home", price: "₹1600/night (Standard), ₹2100/night (Family)", contact: "+91 9003001010" },
+                { name: "Asansol Heritage Guest House", type: "Guest House", price: "₹1200/night (Non-AC), ₹1700/night (AC)", contact: "+91 9003001011" },
+                { name: "Ushagram Inn", type: "Inn", price: "₹1400/night (Single), ₹1900/night (Double)", contact: "+91 9003001012" },
+                { name: "Hirapur Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1600/night (Suite)", contact: "+91 9003001013" },
+                { name: "Asansol City Resort", type: "Resort", price: "₹3000/night (Cottage), ₹4000/night (Villa)", contact: "+91 9003001014" },
+                { name: "Rupnarayanpur Holiday Home", type: "Holiday Home", price: "₹1700/night (Standard), ₹2200/night (Deluxe)", contact: "+91 9003001015" }
+            ],
+            "Kharagpur": [
+                { name: "Kharagpur Comfort Inn", type: "Inn", price: "₹1200/night (Single), ₹1800/night (Double)", contact: "+91 9004001001" },
+                { name: "IIT Guest House", type: "Guest House", price: "₹1000/night (Non-AC), ₹1400/night (AC)", contact: "+91 9004001002" },
+                { name: "Railway Holiday Home", type: "Holiday Home", price: "₹1600/night (Standard), ₹2100/night (Deluxe)", contact: "+91 9004001003" },
+                { name: "Midnapore Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1500/night (Suite)", contact: "+91 9004001004" },
+                { name: "Kharagpur Residency", type: "Guest House", price: "₹1200/night (Non-AC), ₹1700/night (AC)", contact: "+91 9004001005" },
+                { name: "Hijli Resort", type: "Resort", price: "₹3200/night (Cottage), ₹4200/night (Villa)", contact: "+91 9004001006" },
+                { name: "Kharagpur Palace Inn", type: "Inn", price: "₹1300/night (Single), ₹1800/night (Double)", contact: "+91 9004001007" },
+                { name: "Nimpura Retreat", type: "Resort", price: "₹3400/night (Deluxe), ₹4500/night (Suite)", contact: "+91 9004001008" },
+                { name: "Kalaikunda Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1600/night (Suite)", contact: "+91 9004001009" },
+                { name: "Gole Bazar Homestay", type: "Holiday Home", price: "₹1600/night (Standard), ₹2100/night (Family)", contact: "+91 9004001010" },
+                { name: "Kharagpur Heritage Guest House", type: "Guest House", price: "₹1200/night (Non-AC), ₹1700/night (AC)", contact: "+91 9004001011" },
+                { name: "Inda Inn", type: "Inn", price: "₹1400/night (Single), ₹1900/night (Double)", contact: "+91 9004001012" },
+                { name: "Prembazar Lodge", type: "Lodge", price: "₹1100/night (Standard), ₹1600/night (Suite)", contact: "+91 9004001013" },
+                { name: "Kharagpur City Resort", type: "Resort", price: "₹3000/night (Cottage), ₹4000/night (Villa)", contact: "+91 9004001014" },
+                { name: "Mallickpara Holiday Home", type: "Holiday Home", price: "₹1700/night (Standard), ₹2200/night (Deluxe)", contact: "+91 9004001015" }
+            ],
+            // ...existing code...
+        };
+
+        function renderAccomodation(city) {
+            if (!city) {
+                accomodationList.innerHTML = '<div class="text-muted" style="font-size:1.2em;">Select a city to view available stay options.</div>';
+                return;
+            }
+            // Normalize city name to match keys in accomodationData
+            const cityKey = Object.keys(accomodationData).find(
+                k => k.toLowerCase() === city.toLowerCase()
+            );
+            if (!cityKey) {
+                accomodationList.innerHTML = '<div class="text-muted" style="font-size:1.2em;">No stay options found for this city.</div>';
+                return;
+            }
+            accomodationList.innerHTML = accomodationData[cityKey].map(a => `
+                <div class="accomodation-card">
+                    <div class="accomodation-name">${a.name}</div>
+                    <div class="accomodation-type"><b>Type:</b> ${a.type}</div>
+                    <div class="accomodation-price"><b>Price:</b> ${a.price}</div>
+                    <div class="accomodation-contact"><b>Contact:</b> ${a.contact}</div>
+                </div>
+            `).join('');
+        }
+
+        // When showing the accomodation panel, always show the city select and clear the list if no city is selected
+        function showPanel(panel) {
+            panelDashboard.classList.add('hide');
+            panelRoute.classList.add('hide');
+            panelFeedback.classList.remove('active');
+            panelTourGuides.classList.remove('active');
+            panelAccomodation.style.display = "none";
+            panelHelpSupport.style.display = "none";
+            panelPlanner.style.display = "none";
+            // Hide Emergency panel by default
+            panelEmergency.style.display = "none";
+            navDashboard.classList.remove('active');
+            navRouteMap.classList.remove('active');
+            navTourGuides.classList.remove('active');
+            navAccomodation.classList.remove('active');
+            navHelpSupport.classList.remove('active');
+            navEmergency.classList.remove('active');
+            if (panel === 'dashboard') {
+                panelDashboard.classList.remove('hide');
+                navDashboard.classList.add('active');
+            } else if (panel === 'route') {
+                panelRoute.classList.remove('hide');
+                navRouteMap.classList.add('active');
+                ensureMap();
+            } else if (panel === 'feedback') {
+                panelFeedback.classList.add('active');
+            } else if (panel === 'tour-guides') {
+                panelTourGuides.classList.add('active');
+                navTourGuides.classList.add('active');
+                renderTourGuides(tourGuidesSort.value);
+            } else if (panel === 'accomodation') {
+                panelAccomodation.style.display = "block";
+                navAccomodation.classList.add('active');
+                renderAccomodation(accomodationCitySelect.value);
+            } else if (panel === 'help-support') {
+                panelHelpSupport.style.display = "block";
+                navHelpSupport.classList.add('active');
+            } else if (panel === 'emergency') {
+                panelEmergency.style.display = "block";
+                navEmergency.classList.add('active');
+            } else if (panel === 'planner') {
+                panelPlanner.style.display = "block";
+                navPlanner.classList.add('active');
+                renderPlannerCalendar();
+            }
+        }
+        navDashboard.addEventListener('click', () => showPanel('dashboard'));
+        navRouteMap.addEventListener('click', () => showPanel('route'));
+        navTourGuides.addEventListener('click', () => showPanel('tour-guides'));
+        navAccomodation.addEventListener('click', () => showPanel('accomodation'));
+        navHelpSupport.addEventListener('click', () => showPanel('help-support'));
+        navEmergency.addEventListener('click', () => showPanel('emergency'));
+        navPlanner.addEventListener('click', () => showPanel('planner'));
+        showFeedbackPanelBtn.addEventListener('click', () => showPanel('feedback'));
+        showTourGuidesBtn?.addEventListener('click', () => showPanel('tour-guides'));
+        backToRouteMapBtn?.addEventListener('click', () => showPanel('route'));
+        tourGuidesSort?.addEventListener('change', () => renderTourGuides(tourGuidesSort.value));
+        accomodationCitySelect.addEventListener('change', function() {
+            renderAccomodation(this.value);
+        });
+
+        // Show dashboard by default
+        showPanel('dashboard');
+
+        // Settings modal logic
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettings = document.getElementById('closeSettings');
+        closeSettings.addEventListener('click', function() {
+            settingsModal.style.display = 'none';
+        });
+        window.onclick = function(event) {
+            if (event.target == settingsModal) {
+                settingsModal.style.display = 'none';
+            }
+        };
+        
+
+        // Ensure map is initialized when Route Map panel is shown
+        function ensureMap() {
+            setTimeout(() => {
+                if (!document.getElementById('map')) {
+                    const mapDiv = document.createElement('div');
+                    mapDiv.id = 'map';
+                    mapDiv.style.height = '100%';
+                    mapDiv.style.width = '100%';
+                    document.getElementById('map-container').appendChild(mapDiv);
+                }
+                if (typeof initMap === "function") initMap();
+            }, 50);
+        }
+        // User Count Chart (Animated, Attractive)
+        document.addEventListener('DOMContentLoaded', function() {
+            // User Count Chart
+            const ctx = document.getElementById('userCountChart');
+            if (ctx) {
+                const userData = {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                    datasets: [{
+                        label: 'Users',
+                        data: [120, 150, 180, 220, 300, 350, 400],
+                        fill: true,
+                        backgroundColor: 'rgba(0, 123, 255, 0.15)',
+                        borderColor: '#007bff',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#007bff',
+                        pointRadius: 6,
+                        tension: 0.4,
+                    }]
+                };
+                new Chart(ctx, {
+                    type: 'line',
+                    data: userData,
+                    options: {
+                        responsive: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: false },
+                            tooltip: {
+                                backgroundColor: '#007bff',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#fff',
+                                borderWidth: 1,
+                                padding: 16,
+                            }
+                        },
+                        animation: {
+                            duration: 1800,
+                            easing: 'easeOutQuart'
+                        },
+                        layout: { padding: 16 },
+                        scales: {
+                            x: {
+                                grid: { color: '#b6c6e0' },
+                                ticks: {
+                                    color: '#003366',
+                                    font: { weight: 'bold', size: 18 }
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#b6c6e0' },
+                                ticks: {
+                                    color: '#003366',
+                                    font: { weight: 'bold', size: 18 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Visitors Per City Chart (Animated, Attractive)
+            const vtx = document.getElementById('visitorsPerCityChart');
+            if (vtx) {
+                // Example data (replace with dynamic data as needed)
+                const visitorLabels = ['Darjeeling', 'Siliguri', 'Kharagpur', 'Asansol', 'Kolkata', 'Malda', 'Bardhaman', 'Durgapur', 'Howrah', 'Hooghly'];
+                const visitorData = [320, 280, 260, 210, 190, 170, 150, 130, 120, 110, 100];
+                new Chart(vtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: visitorLabels,
+                        datasets: [{
+                            label: 'Visitors',
+                            data: visitorData,
+                            backgroundColor: [
+                                'rgba(0,123,255,0.7)',
+                                'rgba(0,200,255,0.7)',
+                                'rgba(0,255,200,0.7)',
+                                'rgba(40,167,69,0.7)',
+                                'rgba(255,193,7,0.7)',
+                                'rgba(220,53,69,0.7)',
+                                'rgba(255,105,180,0.7)',
+                                'rgba(153,102,255,0.7)',
+                                'rgba(255,159,64,0.7)',
+                                'rgba(111,66,193,0.7)'
+                            ],
+                            borderColor: '#fff',
+                            borderWidth: 3,
+                            hoverOffset: 16
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    color: '#003366',
+                                    font: { weight: 'bold', size: 18 }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#007bff',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#fff',
+                                borderWidth: 1,
+                                padding: 16,
+                            }
+                        },
+                        animation: {
+                            animateRotate: true,
+                            animateScale: true,
+                            duration: 1800,
+                            easing: 'easeOutQuart'
+                        },
+                        layout: { padding: 16 }
+                    }
+                });
+            }
+        });
+
+
+        // --- User Login/Logout/Theme Logic ---
+        // Demo users (replace with backend auth in production)
+        const users = [
+            { username: "user1", password: "pass1" },
+            { username: "admin", password: "admin" },
+            { username: "guest", password: "guest" }
+        ];
+        const loginModal = document.getElementById('loginModal');
+        const loginBtn = document.getElementById('loginBtn');
+        const closeLogin = document.getElementById('closeLogin');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+        const sidebarFooter = document.getElementById('sidebarFooter');
+        const userDropdown = document.getElementById('userDropdown');
+        const usernameDisplay = document.getElementById('usernameDisplay');
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeToggleText = document.getElementById('themeToggleText');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        function showLoginModal() {
+            loginModal.style.display = 'block';
+            loginError.style.display = 'none';
+            loginForm.reset();
+        }
+        function hideLoginModal() {
+            loginModal.style.display = 'none';
+        }
+        function setUserUI(loggedIn, username = "") {
+            if (loggedIn) {
+                userDropdown.style.display = "";
+                loginBtn.style.display = "none";
+                usernameDisplay.textContent = username;
+            } else {
+                userDropdown.style.display = "none";
+                loginBtn.style.display = "";
+                usernameDisplay.textContent = "";
+            }
+        }
+        function getCurrentUser() {
+            return localStorage.getItem('currentUser');
+        }
+        function setCurrentUser(username) {
+            localStorage.setItem('currentUser', username);
+        }
+        function clearCurrentUser() {
+            localStorage.removeItem('currentUser');
+        }
+        // On page load, check login state
+        function checkLoginState() {
+            const user = getCurrentUser();
+            setUserUI(!!user, user || "");
+        }
+        // Login logic
+        loginBtn.addEventListener('click', showLoginModal);
+        closeLogin.addEventListener('click', hideLoginModal);
+        window.addEventListener('click', function(event) {
+            if (event.target == loginModal) hideLoginModal();
+        });
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const found = users.find(u => u.username === username && u.password === password);
+            if (found) {
+                setCurrentUser(username);
+                setUserUI(true, username);
+                hideLoginModal();
+            } else {
+                loginError.textContent = "Invalid username or password.";
+                loginError.style.display = "block";
+            }
+        });
+        // Logout logic
+        logoutBtn.addEventListener('click', function() {
+            clearCurrentUser();
+            setUserUI(false);
+        });
+        // Theme toggle logic (moved to dropdown)
+        function updateThemeToggleText() {
+            if (document.body.classList.contains('night-mode')) {
+                themeToggleText.textContent = "Day Mode";
+            } else {
+                themeToggleText.textContent = "Night Mode";
+            }
+        }
+        themeToggleBtn.addEventListener('click', function() {
+            document.body.classList.toggle('night-mode');
+            localStorage.setItem('nightMode', document.body.classList.contains('night-mode') ? 'true' : 'false');
+            updateThemeToggleText();
+        });
+        // On load, set theme text and login state
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginState();
+            updateThemeToggleText();
+        });
+        // Also update theme text if toggled elsewhere
+        const nightModeToggle = document.getElementById('toggleNightMode');
+        if (nightModeToggle) {
+            nightModeToggle.addEventListener('change', updateThemeToggleText);
+        }
+        // Hide settings modal theme toggle (optional, since now in dropdown)
+        if (nightModeToggle) nightModeToggle.parentElement.style.display = "none";
+
+        // --- User Profile Modal Logic ---
+        // Demo: user profile data (now with phone and city)
+        const userProfiles = {
+            "user1": {
+                name: "User One",
+                avatar: "https://ui-avatars.com/api/?name=User+One&background=007bff&color=fff",
+                phone: "+91 9876543210",
+                city: "Kolkata"
+            },
+            "admin": {
+                name: "Admin",
+                avatar: "https://ui-avatars.com/api/?name=Admin&background=00c6ff&color=fff",
+                phone: "+91 9123456789",
+                city: "Darjeeling"
+            },
+            "guest": {
+                name: "Guest",
+                avatar: "https://ui-avatars.com/api/?name=Guest&background=ffb6b9&color=fff",
+                phone: "+91 9000000000",
+                city: "Siliguri"
+            }
+        };
+
+        // Demo: travel history (store in localStorage per user)
+        function getTravelHistory(username) {
+            const key = `travelHistory_${username}`;
+            let history = localStorage.getItem(key);
+            if (!history) {
+                // Demo default history
+                history = JSON.stringify([
+                    { city: "Kolkata", date: "2025-05-12" },
+                    { city: "Darjeeling", date: "2025-06-05" },
+                    { city: "Siliguri", date: "2024-05-01" }
+                ]);
+                localStorage.setItem(key, history);
+            }
+            return JSON.parse(history);
+        }
+
+        // Profile modal open/close logic
+        document.addEventListener('DOMContentLoaded', function() {
+            // ...existing code...
+            const profileBtn = document.getElementById('profileBtn');
+            const userProfileModal = document.getElementById('userProfileModal');
+            const closeUserProfile = document.getElementById('closeUserProfile');
+            profileBtn?.addEventListener('click', function(e) {
+                e.preventDefault();
+                const username = getCurrentUser();
+                if (!username) return;
+                const profile = userProfiles[username] || {
+                    name: username,
+                    avatar: "https://ui-avatars.com/api/?name=" + encodeURIComponent(username) + "&background=007bff&color=fff",
+                    phone: "N/A",
+                    city: "N/A"
+                };
+                const history = getTravelHistory(username).slice(-3).reverse();
+                const historyHtml = history.length
+                    ? `<ul class="list-unstyled mb-0">${history.map(h => `
+                        <li style="margin-bottom:8px;">
+                            <span class="badge bg-primary" style="font-size:1em;padding:7px 14px;border-radius:16px;">
+                                <i class="bi bi-geo-alt-fill"></i> ${h.city}
+                            </span>
+                            <span class="text-muted ms-2" style="font-size:0.98em;"><i class="bi bi-calendar-event"></i> ${h.date}</span>
+                        </li>
+                    `).join('')}</ul>`
+                    : `<div class="text-muted">No travel history yet.</div>`;
+                document.getElementById('userProfileBody').innerHTML = `
+                    <div class="d-flex align-items-center mb-4" style="gap:18px;">
+                        <img src="${profile.avatar}" alt="${profile.name}" style="width:84px;height:84px;border-radius:50%;border:3px solid #00c6ff;box-shadow:0 2px 12px #007bff33;">
+                        <div>
+                            <div style="font-weight:700;font-size:1.35em;color:#007bff;">${profile.name}</div>
+                            <div class="text-muted" style="font-size:1em;">@${username}</div>
+                            <div style="margin-top:8px;">
+                                <span class="badge bg-success" style="font-size:1em;padding:7px 14px;border-radius:16px;">
+                                    <i class="bi bi-telephone-fill"></i> ${profile.phone}
+                                </span>
+                            </div>
+                            <div style="margin-top:8px;">
+                                <span class="badge bg-info text-dark" style="font-size:1em;padding:7px 14px;border-radius:16px;">
+                                    <i class="bi bi-geo-alt-fill"></i> ${profile.city}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="background:linear-gradient(90deg,#eaf4fb 60%,#f8fafd 100%);border-radius:12px;padding:18px 16px 10px 16px;box-shadow:0 2px 12px #007bff11;">
+                        <div style="font-weight:600;font-size:1.1em;color:#007bff;margin-bottom:8px;">
+                            <i class="bi bi-clock-history"></i> Last 3 Travel History
+                        </div>
+                        ${historyHtml}
+                    </div>
+                `;
+                userProfileModal.style.display = "block";
+            });
+            closeUserProfile?.addEventListener('click', function() {
+                userProfileModal.style.display = "none";
+            });
+            window.addEventListener('click', function(event) {
+                if (event.target == userProfileModal) userProfileModal.style.display = "none";
+            });
+            // ...existing code...
+        });
+
+        // --- Planner Calendar Logic ---
+        function renderPlannerCalendar() {
+            const calendarDiv = document.getElementById('plannerCalendar');
+            const year = new Date().getFullYear();
+            document.getElementById('plannerYear').textContent = year;
+            const monthNames = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+            let html = '';
+            for (let m = 0; m < 12; m++) {
+                const firstDay = new Date(year, m, 1).getDay();
+                const daysInMonth = new Date(year, m + 1, 0).getDate();
+                html += `<div style="min-width:260px;max-width:260px;background:#f8fafd;border-radius:14px;box-shadow:0 2px 12px #007bff11;padding:12px 8px 18px 8px;">
+                    <div style="font-weight:700;font-size:1.1em;text-align:center;color:#007bff;margin-bottom:6px;">${monthNames[m]}</div>
+                    <table style="width:100%;font-size:0.98em;text-align:center;">
+                        <thead>
+                            <tr style="color:#00c6ff;">
+                                <th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                `;
+                let day = 1;
+                for (let i = 0; i < 6; i++) {
+                    for (let j = 0; j < 7; j++) {
+                        if (i === 0 && j < firstDay) {
+                            html += `<td></td>`;
+                        } else if (day > daysInMonth) {
+                            html += `<td></td>`;
+                        } else {
+                            html += `<td>${day}</td>`;
+                            day++;
+                        }
+                    }
+                    if (day > daysInMonth) break;
+                    html += `</tr>${day <= daysInMonth ? '<tr>' : ''}`;
+                }
+                html += `</tr></tbody></table></div>`;
+            }
+            calendarDiv.innerHTML = html;
+        }
+                // ...existing code...
+                // --- Planner Calendar Logic ---
+                // FESTIVAL DATA (add more as needed)
+                const festivalData = [
+                    {
+                        name: "Durga Puja",
+                        city: "Kolkata",
+                        date: (year) => `${year}-10-02`, // Example: 2nd Oct (real date varies)
+                        displayDay: (year) => new Date(year, 9, 2).getDate(),
+                        month: 9, // October (0-indexed)
+                        image: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Durga_Puja_Pandal_Kolkata.jpg",
+                        community: "Bengali Hindus",
+                        weather: "Pleasant, 24-30°C",
+                        why: "The biggest festival in Kolkata, celebrating the victory of Goddess Durga over evil.",
+                        history: "Durga Puja has been celebrated since the late 16th century and is a major socio-cultural event in Bengal, marked by elaborate pandals, rituals, and cultural performances."
+                    },
+                    {
+                        name: "Losar",
+                        city: "Darjeeling",
+                        date: (year) => `${year}-02-10`, // Example: 10th Feb (real date varies)
+                        displayDay: (year) => new Date(year, 1, 10).getDate(),
+                        month: 1, // February
+                        image: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Losar_Festival_Darjeeling.jpg",
+                        community: "Tibetan Buddhists",
+                        weather: "Cool, 8-16°C",
+                        why: "Tibetan New Year, celebrated with prayers, dances, and feasts.",
+                        history: "Losar marks the beginning of the Tibetan lunar calendar and is celebrated with traditional music, dance, and rituals for good fortune."
+                    },
+                    {
+                        name: "Chhath Puja",
+                        city: "Howrah",
+                        date: (year) => `${year}-11-07`,
+                        displayDay: (year) => new Date(year, 10, 7).getDate(),
+                        month: 10, // November
+                        image: "https://upload.wikimedia.org/wikipedia/commons/9/9e/Chhath_Puja_Howrah.jpg",
+                        community: "Bihari Hindus",
+                        weather: "Mild, 18-26°C",
+                        why: "A festival dedicated to the Sun God, celebrated on riverbanks.",
+                        history: "Chhath Puja is an ancient Hindu Vedic festival, observed to thank Surya (Sun) for sustaining life on earth."
+                    },
+                    {
+                        name: "Christmas",
+                        city: "Kolkata",
+                        date: (year) => `${year}-12-25`,
+                        displayDay: (year) => new Date(year, 11, 25).getDate(),
+                        month: 11, // December
+                        image: "https://upload.wikimedia.org/wikipedia/commons/7/7d/Christmas_Park_Street_Kolkata.jpg",
+                        community: "Christian",
+                        weather: "Cool, 15-22°C",
+                        why: "Celebration of the birth of Jesus Christ, with lights and festivities.",
+                        history: "Christmas in Kolkata is famous for its vibrant celebrations on Park Street, drawing people of all communities."
+                    },
+                    {
+                        name: "Eid-ul-Fitr",
+                        city: "Malda",
+                        date: (year) => `${year}-04-10`,
+                        displayDay: (year) => new Date(year, 3, 10).getDate(),
+                        month: 3, // April
+                        image: "https://upload.wikimedia.org/wikipedia/commons/3/3b/Eid_Malda.jpg",
+                        community: "Muslim",
+                        weather: "Warm, 28-34°C",
+                        why: "Marks the end of Ramadan, celebrated with prayers and feasts.",
+                        history: "Eid is celebrated with great enthusiasm in Malda, with communal prayers and sharing of sweets."
+                    },
+                    {
+                        name: "Poila Boishakh",
+                        city: "Bardhaman",
+                        date: (year) => `${year}-04-15`,
+                        displayDay: (year) => new Date(year, 3, 15).getDate(),
+                        month: 3, // April
+                        image: "https://upload.wikimedia.org/wikipedia/commons/4/4b/Poila_Boishakh_Bardhaman.jpg",
+                        community: "Bengali",
+                        weather: "Warm, 28-35°C",
+                        why: "Bengali New Year, celebrated with fairs, music, and traditional food.",
+                        history: "Poila Boishakh marks the first day of the Bengali calendar and is celebrated with processions, cultural programs, and feasts."
+                    },
+                    {
+                        name: "Guru Nanak Jayanti",
+                        city: "Durgapur",
+                        date: (year) => `${year}-11-15`,
+                        displayDay: (year) => new Date(year, 10, 15).getDate(),
+                        month: 10, // November
+                        image: "https://upload.wikimedia.org/wikipedia/commons/8/8c/Guru_Nanak_Jayanti_Durgapur.jpg",
+                        community: "Sikh",
+                        weather: "Mild, 19-27°C",
+                        why: "Birth anniversary of Guru Nanak, celebrated with prayers and processions.",
+                        history: "Guru Nanak Jayanti is celebrated with kirtans, langar (community meals), and processions in Durgapur."
+                    },
+                    {
+                        name: "Vishwakarma Puja",
+                        city: "Asansol",
+                        date: (year) => `${year}-09-17`,
+                        displayDay: (year) => new Date(year, 8, 17).getDate(),
+                        month: 8, // September
+                        image: "https://upload.wikimedia.org/wikipedia/commons/1/1d/Vishwakarma_Puja_Asansol.jpg",
+                        community: "Hindu (Artisans & Engineers)",
+                        weather: "Pleasant, 25-32°C",
+                        why: "Festival dedicated to Lord Vishwakarma, the divine architect.",
+                        history: "Vishwakarma Puja is celebrated in industrial towns like Asansol, with rituals in factories and workshops."
+                    },
+                    {
+                        name: "Makar Sankranti",
+                        city: "Siliguri",
+                        date: (year) => `${year}-01-15`,
+                        displayDay: (year) => new Date(year, 0, 15).getDate(),
+                        month: 0, // January
+                        image: "https://upload.wikimedia.org/wikipedia/commons/2/2c/Makar_Sankranti_Siliguri.jpg",
+                        community: "Hindu",
+                        weather: "Cool, 14-22°C",
+                        why: "Harvest festival marked by kite flying and fairs.",
+                        history: "Makar Sankranti is celebrated with great enthusiasm in Siliguri, with fairs and kite flying competitions."
+                    },
+                    {
+                        name: "Ram Navami",
+                        city: "Kharagpur",
+                        date: (year) => `${year}-04-17`,
+                        displayDay: (year) => new Date(year, 3, 17).getDate(),
+                        month: 3, // April
+                        image: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Ram_Navami_Kharagpur.jpg",
+                        community: "Hindu",
+                        weather: "Warm, 28-34°C",
+                        why: "Celebrates the birth of Lord Rama, with processions and prayers.",
+                        history: "Ram Navami is celebrated with devotional songs, processions, and rituals in Kharagpur."
+                    },
+                    {
+                        name: "Baisakhi",
+                        city: "Howrah",
+                        date: (year) => `${year}-04-13`,
+                        displayDay: (year) => new Date(year, 3, 13).getDate(),
+                        month: 3, // April
+                        image: "https://upload.wikimedia.org/wikipedia/commons/8/8c/Baisakhi_Howrah.jpg",
+                        community: "Punjabi",
+                        weather: "Warm, 28-35°C",
+                        why: "Harvest festival celebrated with music, dance, and fairs.",
+                        history: "Baisakhi marks the harvest season and is celebrated with traditional Punjabi dances and fairs in Howrah."
+                    },
+                    {
+                        name: "Buddha Purnima",
+                        city: "Darjeeling",
+                        date: (year) => `${year}-05-15`,
+                        displayDay: (year) => new Date(year, 4, 15).getDate(),
+                        month: 4, // May
+                        image: "https://upload.wikimedia.org/wikipedia/commons/3/3c/Buddha_Purnima_Darjeeling.jpg",
+                        community: "Buddhist",
+                        weather: "Pleasant, 15-25°C",
+                        why: "Celebration of the birth of Gautama Buddha, with prayers and rituals.",
+                        history: "Buddha Purnima is observed with prayers, meditation, and processions in Darjeeling's monasteries."
+                    },
+                    {
+                        name: "Dol Yatra / Holi",
+                        city: "Bardhaman",
+                        date: (year) => `${year}-03-25`, // Example: 25th March (date varies, update as needed)
+                        displayDay: (year) => new Date(year, 2, 25).getDate(),
+                        month: 2, // March (0-indexed)
+                        image: "https://upload.wikimedia.org/wikipedia/commons/7/7e/Dol_Yatra_Bardhaman.jpg",
+                        community: "Hindu",
+                        weather: "Warm, 26-32°C",
+                        why: "Festival of colors, celebrating the arrival of spring with music, dance, and vibrant powders.",
+                        history: "Dol Yatra, also known as Holi, is celebrated with processions, singing, and the throwing of colored powders. In Bardhaman, it is marked by traditional rituals and community gatherings."
+                    },
+                    {
+                        name: "Jagaddhatri Puja",
+                        city: "Hooghly",
+                        date: (year) => `${year}-11-01`,
+                        displayDay: (year) => new Date(year, 10, 1).getDate(),
+                        month: 10, // November
+                        image: "https://upload.wikimedia.org/wikipedia/commons/4/4c/Jagaddhatri_Puja_Hooghly.jpg",
+                        community: "Hindu",
+                        weather: "Mild, 20-28°C",
+                        why: "Celebration of Goddess Jagaddhatri, with grand processions and rituals.",
+                        history: "Jagaddhatri Puja is a significant festival in Hooghly, featuring elaborate decorations and cultural performances."
+                    },
+                    {
+                        name: "Bengali New Year",
+                        city: "Kolkata",
+                        date: (year) => `${year}-04-14`,
+                        displayDay: (year) => new Date(year, 3, 14).getDate(),
+                        month: 3, // April
+                        image: "https://upload.wikimedia.org/wikipedia/commons/1/1c/Bengali_New_Year_Kolkata.jpg",
+                        community: "Bengali",
+                        weather: "Warm, 28-35°C",
+                        why: "Celebration of the Bengali New Year with fairs, music, and traditional food.",
+                        history: "Poila Boishakh marks the first day of the Bengali calendar and is celebrated with processions, cultural programs, and feasts."
+                    },
+                    {
+                        name: "Kali Puja",
+                        city: "Kolkata",
+                        date: (year) => `${year}-10-24`,
+                        displayDay: (year) => new Date(year, 9, 24).getDate(),
+                        month: 9, // October
+                        image: "https://upload.wikimedia.org/wikipedia/commons/2/2c/Kali_Puja_Kolkata.jpg",
+                        community: "Hindu",
+                        weather: "Pleasant, 24-30°C",
+                        why: "Worship of Goddess Kali, with night-long rituals and celebrations.",
+                        history: "Kali Puja is celebrated with great fervor in Kolkata, featuring elaborate decorations and cultural performances."
+                    }, 
+                    {                        name: "Basant Panchami",
+                        city: "Siliguri",
+                        date: (year) => `${year}-01-26`,
+                        displayDay: (year) => new Date(year, 0, 26).getDate(),
+                        month: 0, // January
+                        image: "https://upload.wikimedia.org/wikipedia/commons/3/3c/Basant_Panchami_Siliguri.jpg",
+                        community: "Hindu",
+                        weather: "Cool, 12-20°C",
+                        why: "Celebration of Goddess Saraswati, with yellow attire and kite flying.",
+                        history: "Basant Panchami marks the arrival of spring and is celebrated with prayers to Goddess Saraswati, the goddess of knowledge and arts."
+                    },
+                    {
+                        name: "Maha Shivaratri",
+                        city: "Kharagpur",
+                        date: (year) => `${year}-03-11`,
+                        displayDay: (year) => new Date(year, 2, 11).getDate(),
+                        month: 2, // March
+                        image: "https://upload.wikimedia.org/wikipedia/commons/4/4c/Maha_Sivaratri_Kharagpur.jpg",
+                        community: "Hindu",
+                        weather: "Warm, 26-32°C",
+                        why: "Night dedicated to Lord Shiva, with fasting and night-long vigils.",
+                        history: "Maha Shivaratri is celebrated with prayers, fasting, and night-long vigils in honor of Lord Shiva."
+                    },
+                    {                        name: "Rath Yatra",
+                        city: "Kolkata",
+                        date: (year) => `${year}-07-01`,
+                        displayDay: (year) => new Date(year, 6, 1).getDate(),
+                        month: 6, // July
+                        image: "https://upload.wikimedia.org/wikipedia/commons/7/7c/Rath_Yatra_Kolkata.jpg",
+                        community: "Hindu",
+                        weather: "Monsoon, 26-32°C",
+                        why: "Chariot festival dedicated to Lord Jagannath, celebrated with grand processions.",
+                        history: "Rath Yatra is a major festival in Kolkata, where large chariots are pulled through the streets by devotees."
+                    },
+                    {
+                        name: "Buddha Jayanti",
+                        city: "Darjeeling",
+                        date: (year) => `${year}-05-22`,
+                        displayDay: (year) => new Date(year, 4, 22).getDate(),
+                        month: 4, // May
+                        image: "https://upload.wikimedia.org/wikipedia/commons/3/3c/Buddha_Jayanti_Darjeeling.jpg",
+                        community: "Buddhist",
+                        weather: "Pleasant, 15-25°C",
+                        why: "Celebration of the birth of Gautama Buddha, with prayers and rituals.",
+                        history: "Buddha Jayanti is observed with prayers, meditation, and processions in Darjeeling's monasteries."
+                    },
+                    {
+                        name: "Rath Yatra",
+                        city: "Hooghly",
+                        date: (year) => `${year}-07-07`,
+                        displayDay: (year) => new Date(year, 6, 7).getDate(),
+                        month: 6, // July
+                        image: "https://upload.wikimedia.org/wikipedia/commons/7/7c/Rath_Yatra_Hooghly.jpg",
+                        community: "Hindu",
+                        weather: "Monsoon, 26-32°C",
+                        why: "Chariot festival dedicated to Lord Jagannath, celebrated with processions.",
+                        history: "Rath Yatra is a major festival in Hooghly, where large chariots are pulled through the streets by devotees."
+                    }
+                    
+                ];
+        
+                // Helper: Get festivals for a month
+                function getFestivalsForMonth(year, month) {
+                    return festivalData.filter(f => f.month === month && f.date(year));
+                }
+        
+                // Helper: Get festival by city and day
+                function getFestivalByMonthDay(year, month, day) {
+                    return festivalData.find(f => f.month === month && f.displayDay(year) === day);
+                }
+        
+                // --- FESTIVAL MODAL ---
+                // Add modal HTML at the end of body if not present
+                if (!document.getElementById('festivalModal')) {
+                    const modal = document.createElement('div');
+                    modal.id = 'festivalModal';
+                    modal.style.display = 'none';
+                    modal.style.position = 'fixed';
+                    modal.style.top = '0';
+                    modal.style.left = '0';
+                    modal.style.width = '100vw';
+                    modal.style.height = '100vh';
+                    modal.style.background = 'rgba(0,0,0,0.5)';
+                    modal.style.zIndex = '9999';
+                    modal.innerHTML = `
+                        <div id="festivalModalContent" style="
+                            background: #fff;
+                            border-radius: 18px;
+                            max-width: 420px;
+                            margin: 60px auto 0 auto;
+                            padding: 0;
+                            box-shadow: 0 8px 32px #007bff44;
+                            animation: festivalPopIn 0.5s cubic-bezier(.6,2,.4,1);
+                            position: relative;
+                        ">
+                            <button id="closeFestivalModal" style="
+                                position: absolute;
+                                top: 12px;
+                                right: 16px;
+                                background: none;
+                                border: none;
+                                font-size: 1.8em;
+                                color: #007bff;
+                                cursor: pointer;
+                                z-index: 2;
+                            ">&times;</button>
+                            <div id="festivalModalBody" style="padding: 32px 24px 24px 24px;"></div>
+                        </div>
+                        <style>
+                            @keyframes festivalPopIn {
+                                0% { transform: scale(0.7) translateY(60px); opacity: 0; }
+                                80% { transform: scale(1.05) translateY(-8px); opacity: 1; }
+                                100% { transform: scale(1) translateY(0); opacity: 1; }
+                            }
+                            .festival-anim-glow {
+                                box-shadow: 0 0 0 0 #00c6ff88;
+                                animation: festivalGlow 1.2s infinite alternate;
+                            }
+                            @keyframes festivalGlow {
+                                0% { box-shadow: 0 0 0 0 #00c6ff55; }
+                                100% { box-shadow: 0 0 18px 8px #00c6ff55; }
+                            }
+                            .festival-anim-bounce {
+                                animation: festivalBounce 0.8s;
+                            }
+                            @keyframes festivalBounce {
+                                0% { transform: scale(0.7); }
+                                60% { transform: scale(1.15); }
+                                100% { transform: scale(1); }
+                            }
+                        </style>
+                    `;
+                    document.body.appendChild(modal);
+                    document.getElementById('closeFestivalModal').onclick = () => {
+                        modal.style.display = 'none';
+                    };
+                    window.addEventListener('click', function(e) {
+                        if (e.target === modal) modal.style.display = 'none';
+                    });
+                }
+        
+                function showFestivalModal(festival) {
+                    const body = document.getElementById('festivalModalBody');
+                    body.innerHTML = `
+                        <div style="text-align:center;">
+                            <img src="${festival.image}" alt="${festival.name}" style="width:120px;height:120px;object-fit:cover;border-radius:16px;box-shadow:0 2px 16px #00c6ff33;margin-bottom:16px;" class="festival-anim-bounce">
+                        </div>
+                        <div style="font-weight:700;font-size:1.35em;color:#007bff;text-align:center;margin-bottom:6px;">
+                            ${festival.name}
+                        </div>
+                        <div style="font-size:1.08em;color:#00c6ff;text-align:center;margin-bottom:10px;">
+                            ${festival.city}
+                        </div>
+                        <div style="font-size:1em;margin-bottom:10px;">
+                            <b>Community:</b> <span style="color:#00b894;">${festival.community}</span>
+                        </div>
+                        <div style="font-size:1em;margin-bottom:10px;">
+                            <b>Weather:</b> <span style="color:#ff9800;">${festival.weather}</span>
+                        </div>
+                        <div style="font-size:1em;margin-bottom:10px;">
+                            <b>Why Important:</b> ${festival.why}
+                        </div>
+                        <div style="font-size:0.98em;color:#444;margin-bottom:10px;">
+                            <b>History:</b> ${festival.history}
+                        </div>
+                    `;
+                    document.getElementById('festivalModal').style.display = 'block';
+                }
+        
+                function renderPlannerCalendar() {
+                    const calendarDiv = document.getElementById('plannerCalendar');
+                    const year = new Date().getFullYear();
+                    document.getElementById('plannerYear').textContent = year;
+                    const monthNames = [
+                        "January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"
+                    ];
+                    let html = '';
+                    for (let m = 0; m < 12; m++) {
+                        const firstDay = new Date(year, m, 1).getDay();
+                        const daysInMonth = new Date(year, m + 1, 0).getDate();
+                        // Get festivals for this month
+                        const festivalsThisMonth = getFestivalsForMonth(year, m);
+                        html += `<div style="min-width:260px;max-width:260px;background:#f8fafd;border-radius:14px;box-shadow:0 2px 12px #007bff11;padding:12px 8px 18px 8px;position:relative;overflow:visible;">
+                            <div style="font-weight:700;font-size:1.1em;text-align:center;color:#007bff;margin-bottom:6px;letter-spacing:1px;">
+                                ${monthNames[m]}
+                            </div>
+                            <table style="width:100%;font-size:0.98em;text-align:center;user-select:none;">
+                                <thead>
+                                    <tr style="color:#00c6ff;">
+                                        <th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                        `;
+                        let day = 1;
+                        for (let i = 0; i < 6; i++) {
+                            for (let j = 0; j < 7; j++) {
+                                if (i === 0 && j < firstDay) {
+                                    html += `<td></td>`;
+                                } else if (day > daysInMonth) {
+                                    html += `<td></td>`;
+                                } else {
+                                    // Check if this day is a festival
+                                    const fest = getFestivalByMonthDay(year, m, day);
+                                    if (fest) {
+                                        html += `<td style="padding:0;">
+                                            <div 
+                                                class="festival-anim-glow"
+                                                style="
+                                                    display:inline-block;
+                                                    width:34px;height:34px;
+                                                    border-radius:50%;
+                                                    background:linear-gradient(135deg,#00c6ff 60%,#ffd166 100%);
+                                                    color:#fff;
+                                                    font-weight:700;
+                                                    font-size:1.08em;
+                                                    line-height:34px;
+                                                    margin:2px auto;
+                                                    box-shadow:0 0 0 0 #00c6ff55;
+                                                    cursor:pointer;
+                                                    transition:transform 0.18s;
+                                                    border:2.5px solid #007bff;
+                                                    outline:3px solid #fff;
+                                                    outline-offset:-2px;
+                                                    position:relative;
+                                                    animation-delay:${(m+1)*0.1}s;
+                                                "
+                                                title="${fest.name} (${fest.city})"
+                                                onclick="showFestivalModal(${festivalData.indexOf(fest)})"
+                                                onmouseover="this.style.transform='scale(1.18)';"
+                                                onmouseout="this.style.transform='scale(1)';"
+                                            >${day}</div>
+                                        </td>`;
+                                    } else {
+                                        html += `<td>${day}</td>`;
+                                    }
+                                    day++;
+                                }
+                            }
+                            if (day > daysInMonth) break;
+                            html += `</tr>${day <= daysInMonth ? '<tr>' : ''}`;
+                        }
+                        html += `</tr></tbody></table>`;
+                        // Add festival legend for this month
+                        if (festivalsThisMonth.length) {
+                            html += `<div style="margin-top:8px;">
+                                ${festivalsThisMonth.map(f => `
+                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                                        <div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#00c6ff 60%,#ffd166 100%);border:2px solid #007bff;display:inline-block;"></div>
+                                        <span style="font-size:0.97em;font-weight:600;color:#007bff;cursor:pointer;text-decoration:underline dotted;" onclick="showFestivalModal(${festivalData.indexOf(f)})">${f.name} <span style="color:#00c6ff;font-weight:400;">(${f.city})</span></span>
+                                    </div>
+                                `).join('')}
+                            </div>`;
+                        }
+                        html += `</div>`;
+                    }
+                    calendarDiv.innerHTML = html;
+                }
+        
+                // Expose showFestivalModal globally for inline onclick
+                window.showFestivalModal = function(idx) {
+                    showFestivalModal(festivalData[idx]);
+                };
+        // ...existing code...
+    </script>
+</body>
+</html>
