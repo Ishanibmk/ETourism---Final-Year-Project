@@ -1,0 +1,106 @@
+PROJECT TITLE:
+A Hybrid Fuzzy Harmony Search and IoT Framework for Real-Time Traveling Salesman Problem Optimization
+
+PROJECT MEMBERS:
+Ishani Bhowmick (34230921007)
+K. Divyansh (34230921002)
+Abhishek Vishwakarma (34230921014)
+Arka Bhattacharjee (34230921008)
+
+SUPERVISED BY:
+Dr. Tuli Bakshi
+Future Institute of Technology, Kolkata
+
+---------------------------------------
+PROJECT DESCRIPTION:
+---------------------------------------
+
+This project presents a hybrid approach to solving the Traveling Salesman Problem (TSP) using the Harmony Search Algorithm combined with Fuzzy Logic and simulated IoT input. The algorithm is designed to find optimal or near-optimal travel routes between cities, taking into account uncertainties in distance, cost, and time using fuzzy values.
+
+The system includes:
+- A Flask backend for running the optimization.
+- A simple HTML-based dashboard to interact with the program.
+- Python files implementing the Harmony Search logic and fuzzy arithmetic.
+- A CSV file representing the distance matrix between cities.
+
+---------------------------------------
+PREREQUISITES:
+---------------------------------------
+
+Make sure you have the following installed:
+- Python (version 3.8 or above)
+- pip (Python package manager)
+
+Required Python libraries:
+- flask
+- matplotlib
+- numpy
+
+To install them, open Command Prompt and type:
+
+pip install flask matplotlib numpy
+
+---------------------------------------
+PROJECT FILES:
+---------------------------------------
+
+- app.py                  --> Flask server and route handler
+- harmony_search.py       --> Harmony Search algorithm with fuzzy logic
+- fuzzy_logic.py          --> Functions for fuzzy arithmetic and TFNs
+- city_distance.csv       --> Input file containing city distance matrix
+- templates/index.html    --> Web interface for route calculation
+- static/                 --> Folder containing CSS and JS files
+
+---------------------------------------
+HOW TO RUN THE PROJECT:
+---------------------------------------
+
+Step 1: Open Command Prompt and navigate to the project folder.
+
+Example:
+cd C:\Users\YourName\Desktop\tsp_project
+
+Step 2: Run the Flask application
+
+Type:
+python app.py
+
+Step 3: Open your browser and go to:
+http://127.0.0.1:5000
+
+Step 4: Use the dashboard to:
+- Load cities from the CSV file
+- Run the Fuzzy Harmony Search algorithm
+- View the optimized tour and route cost
+
+---------------------------------------
+INPUT FORMAT:
+---------------------------------------
+
+Make sure your city_distance.csv file follows this format:
+
+,City1,City2,City3
+City1,0,12,25
+City2,12,0,20
+City3,25,20,0
+
+The distance matrix must be symmetric and contain all pairwise distances.
+
+---------------------------------------
+OUTPUT:
+---------------------------------------
+
+- The optimized route is shown on the webpage.
+- Route cost and city sequence are printed on screen.
+- If enabled, matplotlib shows the city graph with arrows (if coded).
+- The backend console also prints the fuzzy cost and crisp value.
+
+---------------------------------------
+NOTES:
+---------------------------------------
+
+- You can adjust parameters like HMCR, PAR, Bandwidth in harmony_search.py.
+- You can also replace the input CSV file with your own distance matrix.
+- This project can be extended to include live data from GPS sensors, traffic APIs, or delivery systems using actual IoT hardware.
+
+
