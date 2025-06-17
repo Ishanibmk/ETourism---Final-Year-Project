@@ -1,4 +1,6 @@
 # ETourism---Final-Year-Project
+Refer -> About.txt for instructions 
+
 Project Overview: 
 This project presents an intelligent hybrid framework that combines the Fuzzy Harmony Search (FHS) algorithm with Internet of Things (IoT) technologies to solve the Traveling Salesman Problem (TSP) in real-time. The system is designed to handle uncertainties in dynamic environments using fuzzy logic and real-time data from IoT devices, improving both the accuracy and adaptability of route optimization for logistics and smart city applications.
 
